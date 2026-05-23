@@ -17,7 +17,6 @@ local notificationTimers = {}
 local linksPanelOpen = false
 local selectedLinkSite = nil
 
--- Função para adaptar tamanho do painel baseado na tela
 local function calculatePanelScale(screenSize)
 	local referenceWidth = 1920
 	local referenceHeight = 1080
@@ -27,12 +26,10 @@ local function calculatePanelScale(screenSize)
 	local screenWidth = screenSize.X
 	local screenHeight = screenSize.Y
 	
-	-- Calcula escala baseada na menor dimensão
 	local scaleX = screenWidth / referenceWidth
 	local scaleY = screenHeight / referenceHeight
 	local scale = math.min(scaleX, scaleY)
 	
-	-- Limita a escala entre 0.5 e 1.5
 	scale = math.max(0.5, math.min(scale, 1.5))
 	
 	return scale
