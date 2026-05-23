@@ -17,12 +17,6 @@ local notificationTimers = {}
 local linksPanelOpen = false
 local selectedLinkSite = nil
 
-local PANEL_BASE_WIDTH = 380
-local PANEL_BASE_HEIGHT = 440
-local LINKS_PANEL_BASE_WIDTH = 240
-local LINKS_PANEL_BASE_HEIGHT = 440
-local PADDING = 20
-
 local function createBlur()
 	if not blurEffect then
 		blurEffect = Instance.new("BlurEffect")
@@ -45,51 +39,6 @@ local function createNotificationGui()
 	notifGui.ResetOnSpawn = false
 	notifGui.Parent = playerGui
 	return notifGui
-end
-
-local function calculateScaleAndPosition(panelWidth, panelHeight, isLinksPanel)
-	local screenSize = screenGui.AbsoluteSize
-	local screenWidth = screenSize.X
-	local screenHeight = screenSize.Y
-	
-	local availableWidth = screenWidth - (PADDING * 2)
-	local availableHeight = screenHeight - (PADDING * 2)
-	
-	local scaleX = availableWidth / panelWidth
-	local scaleY = availableHeight / panelHeight
-	local scale = math.min(scaleX, scaleY, 1)
-	
-	local scaledWidth = panelWidth * scale
-	local scaledHeight = panelHeight * scale
-	
-	local centerX = screenWidth / 2
-	local centerY = screenHeight / 2
-	
-	local posX = centerX - (scaledWidth / 2)
-	local posY = centerY - (scaledHeight / 2)
-	
-	return scale, UDim2.new(0, posX, 0, posY)
-end
-
-local function applyResponsiveScaling(panel, baseWidth, baseHeight, isLinksPanel)
-	local scale, position = calculateScaleAndPosition(baseWidth, baseHeight, isLinksPanel)
-	
-	if not panel:FindFirstChild("UIScale") then
-		local uiScale = Instance.new("UIScale")
-		uiScale.Name = "ResponsiveScale"
-		uiScale.Parent = panel
-	end
-	
-	local uiScale = panel:FindFirstChild("UIScale")
-	if uiScale then
-		uiScale.Scale = scale
-	end
-	
-	if isLinksPanel then
-		panel.Position = UDim2.new(0.5, -(baseWidth * scale) / 2 - 30, 0.5, -(baseHeight * scale) / 2)
-	else
-		panel.Position = position
-	end
 end
 
 local function showNotification(title, iconId, duration)
@@ -192,8 +141,8 @@ end
 
 local panelFrame = Instance.new("Frame")
 panelFrame.Name = "PanelFrame"
-panelFrame.Size = UDim2.new(0, PANEL_BASE_WIDTH, 0, PANEL_BASE_HEIGHT)
-panelFrame.Position = UDim2.new(0.5, -PANEL_BASE_WIDTH / 2, 0.5, -PANEL_BASE_HEIGHT / 2)
+panelFrame.Size = UDim2.new(0, 380, 0, 440)
+panelFrame.Position = UDim2.new(0.5, -190, 0.5, -220)
 panelFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 panelFrame.BorderSizePixel = 3
 panelFrame.BorderColor3 = Color3.fromRGB(128, 128, 128)
@@ -202,10 +151,10 @@ panelFrame.Parent = screenGui
 local expandTween = game:GetService("TweenService"):Create(
 	panelFrame,
 	TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-	{Size = UDim2.new(0, PANEL_BASE_WIDTH, 0, PANEL_BASE_HEIGHT)}
+	{Size = UDim2.new(0, 380, 0, 440)}
 )
 
-local initialSize = UDim2.new(0, 0, 0, PANEL_BASE_HEIGHT)
+local initialSize = UDim2.new(0, 0, 0, 440)
 panelFrame.Size = initialSize
 expandTween:Play()
 
@@ -293,7 +242,7 @@ closeButton.MouseButton1Click:Connect(function()
 	local shrinkTween = game:GetService("TweenService"):Create(
 		panelFrame,
 		TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-		{Size = UDim2.new(0, 0, 0, PANEL_BASE_HEIGHT)}
+		{Size = UDim2.new(0, 0, 0, 440)}
 	)
 	shrinkTween:Play()
 
@@ -411,7 +360,7 @@ local function closeLinksPanel()
 		local shrinkTween = game:GetService("TweenService"):Create(
 			linksPanel,
 			TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-			{Size = UDim2.new(0, 0, 0, LINKS_PANEL_BASE_HEIGHT)}
+			{Size = UDim2.new(0, 0, 0, 440)}
 		)
 		shrinkTween:Play()
 
@@ -442,8 +391,8 @@ local function createLinksPanel()
 
 	linksPanel = Instance.new("Frame")
 	linksPanel.Name = "LinksPanel"
-	linksPanel.Size = UDim2.new(0, LINKS_PANEL_BASE_WIDTH, 0, LINKS_PANEL_BASE_HEIGHT)
-	linksPanel.Position = UDim2.new(0.5, -(PANEL_BASE_WIDTH + LINKS_PANEL_BASE_WIDTH) / 2 - 30, 0.5, -LINKS_PANEL_BASE_HEIGHT / 2)
+	linksPanel.Size = UDim2.new(0, 0, 0, 440)
+	linksPanel.Position = UDim2.new(0.5, -450, 0.5, -220)
 	linksPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 	linksPanel.BorderSizePixel = 3
 	linksPanel.BorderColor3 = Color3.fromRGB(128, 128, 128)
@@ -452,11 +401,9 @@ local function createLinksPanel()
 	local expandTween = game:GetService("TweenService"):Create(
 		linksPanel,
 		TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-		{Size = UDim2.new(0, LINKS_PANEL_BASE_WIDTH, 0, LINKS_PANEL_BASE_HEIGHT)}
+		{Size = UDim2.new(0, 240, 0, 440)}
 	)
 	expandTween:Play()
-
-	applyResponsiveScaling(linksPanel, LINKS_PANEL_BASE_WIDTH, LINKS_PANEL_BASE_HEIGHT, true)
 
 	local linksHeaderFrame = Instance.new("Frame")
 	linksHeaderFrame.Name = "LinksHeaderFrame"
@@ -687,7 +634,7 @@ redeemKeyButton.MouseButton1Click:Connect(function()
 		local shrinkTween = game:GetService("TweenService"):Create(
 			panelFrame,
 			TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-			{Size = UDim2.new(0, 0, 0, PANEL_BASE_HEIGHT)}
+			{Size = UDim2.new(0, 0, 0, 440)}
 		)
 		shrinkTween:Play()
 
@@ -722,13 +669,3 @@ discordButton.MouseButton1Click:Connect(function()
 	setclipboard("https://discord.gg/72P6NhC5Pf")
 	showNotification("Discord Link Copied", "132744109593099", 2.85)
 end)
-
-local screenResizeConnection
-screenResizeConnection = screenGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-	applyResponsiveScaling(panelFrame, PANEL_BASE_WIDTH, PANEL_BASE_HEIGHT, false)
-	if linksPanel and linksPanel.Parent then
-		applyResponsiveScaling(linksPanel, LINKS_PANEL_BASE_WIDTH, LINKS_PANEL_BASE_HEIGHT, true)
-	end
-end)
-
-applyResponsiveScaling(panelFrame, PANEL_BASE_WIDTH, PANEL_BASE_HEIGHT, false)
