@@ -17,20 +17,6 @@ local notificationTimers = {}
 local linksPanelOpen = false
 local selectedLinkSite = nil
 
-local referenceResolution = Vector2.new(1920, 1080)
-local panelBaseSize = Vector2.new(380, 440)
-local linksPanelBaseSize = Vector2.new(240, 440)
-
-local function calculateResponsiveScale(screenSize)
-	local scaleX = screenSize.X / referenceResolution.X
-	local scaleY = screenSize.Y / referenceResolution.Y
-	local scale = math.min(scaleX, scaleY)
-	
-	scale = math.max(0.4, math.min(scale, 1.5))
-	
-	return scale
-end
-
 local function createBlur()
 	if not blurEffect then
 		blurEffect = Instance.new("BlurEffect")
@@ -57,12 +43,10 @@ end
 
 local function showNotification(title, iconId, duration)
 	local notificationScreenGui = createNotificationGui()
-	local screenSize = screenGui.AbsoluteSize
-	local notificationScale = calculateResponsiveScale(screenSize)
 	
 	local notificationGui = Instance.new("Frame")
 	notificationGui.Name = "NotificationGui"
-	notificationGui.Size = UDim2.new(0, 300 * notificationScale, 0, 60 * notificationScale)
+	notificationGui.Size = UDim2.new(0, 300, 0, 60)
 	notificationGui.Position = UDim2.new(1, 20, 1, -100)
 	notificationGui.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 	notificationGui.BorderSizePixel = 2
@@ -71,19 +55,19 @@ local function showNotification(title, iconId, duration)
 
 	local notificationIcon = Instance.new("ImageLabel")
 	notificationIcon.Name = "NotificationIcon"
-	notificationIcon.Size = UDim2.new(0, 40 * notificationScale, 0, 40 * notificationScale)
-	notificationIcon.Position = UDim2.new(0, 10 * notificationScale, 0.5, -20 * notificationScale)
+	notificationIcon.Size = UDim2.new(0, 40, 0, 40)
+	notificationIcon.Position = UDim2.new(0, 10, 0.5, -20)
 	notificationIcon.BackgroundTransparency = 1
 	notificationIcon.Image = "rbxassetid://" .. iconId
 	notificationIcon.Parent = notificationGui
 
 	local notificationLabel = Instance.new("TextLabel")
 	notificationLabel.Name = "NotificationLabel"
-	notificationLabel.Size = UDim2.new(1, -60 * notificationScale, 1, 0)
-	notificationLabel.Position = UDim2.new(0, 50 * notificationScale, 0, 0)
+	notificationLabel.Size = UDim2.new(1, -60, 1, 0)
+	notificationLabel.Position = UDim2.new(0, 50, 0, 0)
 	notificationLabel.BackgroundTransparency = 1
 	notificationLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	notificationLabel.TextSize = 14 * notificationScale
+	notificationLabel.TextSize = 14
 	notificationLabel.Font = Enum.Font.Gotham
 	notificationLabel.Text = title
 	notificationLabel.TextWrapped = true
@@ -99,7 +83,7 @@ local function showNotification(title, iconId, duration)
 	progressLine.Parent = notificationGui
 
 	local startTime = tick()
-	local totalWidth = 300 * notificationScale
+	local totalWidth = 300
 	local notificationId = tostring(math.random(100000, 999999))
 
 	notificationTimers[notificationId] = {
@@ -112,7 +96,7 @@ local function showNotification(title, iconId, duration)
 	local slideInTween = game:GetService("TweenService"):Create(
 		notificationGui,
 		TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-		{Position = UDim2.new(1, -320 * notificationScale, 1, -100)}
+		{Position = UDim2.new(1, -320, 1, -100)}
 	)
 	slideInTween:Play()
 
@@ -157,43 +141,20 @@ end
 
 local panelFrame = Instance.new("Frame")
 panelFrame.Name = "PanelFrame"
-panelFrame.Size = UDim2.new(0, panelBaseSize.X, 0, panelBaseSize.Y)
+panelFrame.Size = UDim2.new(0, 380, 0, 440)
+panelFrame.Position = UDim2.new(0.5, -190, 0.5, -220)
 panelFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 panelFrame.BorderSizePixel = 3
 panelFrame.BorderColor3 = Color3.fromRGB(128, 128, 128)
 panelFrame.Parent = screenGui
 
-local panelScale = Instance.new("UIScale")
-panelScale.Name = "PanelScale"
-panelScale.Parent = panelFrame
-
-local function updatePanelLayout()
-	local screenSize = screenGui.AbsoluteSize
-	local scale = calculateResponsiveScale(screenSize)
-	
-	panelScale.Scale = scale
-	
-	local scaledWidth = panelBaseSize.X * scale
-	local scaledHeight = panelBaseSize.Y * scale
-	
-	panelFrame.Position = UDim2.new(0.5, -scaledWidth / 2, 0.5, -scaledHeight / 2)
-end
-
-updatePanelLayout()
-
-screenGui.Changed:Connect(function(property)
-	if property == "AbsoluteSize" then
-		updatePanelLayout()
-	end
-end)
-
 local expandTween = game:GetService("TweenService"):Create(
 	panelFrame,
 	TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-	{Size = UDim2.new(0, panelBaseSize.X, 0, panelBaseSize.Y)}
+	{Size = UDim2.new(0, 380, 0, 440)}
 )
 
-local initialSize = UDim2.new(0, 0, 0, panelBaseSize.Y)
+local initialSize = UDim2.new(0, 0, 0, 440)
 panelFrame.Size = initialSize
 expandTween:Play()
 
@@ -281,7 +242,7 @@ closeButton.MouseButton1Click:Connect(function()
 	local shrinkTween = game:GetService("TweenService"):Create(
 		panelFrame,
 		TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-		{Size = UDim2.new(0, 0, 0, panelBaseSize.Y)}
+		{Size = UDim2.new(0, 0, 0, 440)}
 	)
 	shrinkTween:Play()
 
@@ -391,7 +352,6 @@ getKeyIcon.Image = "rbxassetid://108246566195671"
 getKeyIcon.Parent = getKeyButton
 
 local linksPanel = nil
-local linksPanelScale = nil
 local lootbashButton = nil
 local linkvertiseButton = nil
 
@@ -400,14 +360,13 @@ local function closeLinksPanel()
 		local shrinkTween = game:GetService("TweenService"):Create(
 			linksPanel,
 			TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-			{Size = UDim2.new(0, 0, 0, linksPanelBaseSize.Y)}
+			{Size = UDim2.new(0, 0, 0, 440)}
 		)
 		shrinkTween:Play()
 
 		shrinkTween.Completed:Connect(function()
 			linksPanel:Destroy()
 			linksPanel = nil
-			linksPanelScale = nil
 			linksPanelOpen = false
 			selectedLinkSite = nil
 		end)
@@ -422,24 +381,6 @@ local function updateCopyButtonColor(copyLinkButton)
 	end
 end
 
-local function updateLinksPanelLayout()
-	if linksPanel and linksPanelScale then
-		local screenSize = screenGui.AbsoluteSize
-		local scale = calculateResponsiveScale(screenSize)
-		linksPanelScale.Scale = scale
-		
-		local scaledMainWidth = panelBaseSize.X * scale
-		local scaledLinksWidth = linksPanelBaseSize.X * scale
-		local scaledHeight = linksPanelBaseSize.Y * scale
-		local fixedDistance = 10
-		
-		local totalWidth = scaledMainWidth + scaledLinksWidth + fixedDistance
-		local startX = (screenSize.X - totalWidth) / 2
-		
-		linksPanel.Position = UDim2.new(0, startX, 0.5, -scaledHeight / 2)
-	end
-end
-
 local function createLinksPanel()
 	if linksPanelOpen then
 		closeLinksPanel()
@@ -450,30 +391,19 @@ local function createLinksPanel()
 
 	linksPanel = Instance.new("Frame")
 	linksPanel.Name = "LinksPanel"
-	linksPanel.Size = UDim2.new(0, 0, 0, linksPanelBaseSize.Y)
+	linksPanel.Size = UDim2.new(0, 0, 0, 440)
+	linksPanel.Position = UDim2.new(0.5, -450, 0.5, -220)
 	linksPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 	linksPanel.BorderSizePixel = 3
 	linksPanel.BorderColor3 = Color3.fromRGB(128, 128, 128)
 	linksPanel.Parent = screenGui
 
-	linksPanelScale = Instance.new("UIScale")
-	linksPanelScale.Name = "LinksPanelScale"
-	linksPanelScale.Parent = linksPanel
-
-	updateLinksPanelLayout()
-
 	local expandTween = game:GetService("TweenService"):Create(
 		linksPanel,
 		TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-		{Size = UDim2.new(0, linksPanelBaseSize.X, 0, linksPanelBaseSize.Y)}
+		{Size = UDim2.new(0, 240, 0, 440)}
 	)
 	expandTween:Play()
-
-	screenGui.Changed:Connect(function(property)
-		if property == "AbsoluteSize" and linksPanel and linksPanel.Parent then
-			updateLinksPanelLayout()
-		end
-	end)
 
 	local linksHeaderFrame = Instance.new("Frame")
 	linksHeaderFrame.Name = "LinksHeaderFrame"
@@ -704,7 +634,7 @@ redeemKeyButton.MouseButton1Click:Connect(function()
 		local shrinkTween = game:GetService("TweenService"):Create(
 			panelFrame,
 			TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-			{Size = UDim2.new(0, 0, 0, panelBaseSize.Y)}
+			{Size = UDim2.new(0, 0, 0, 440)}
 		)
 		shrinkTween:Play()
 
