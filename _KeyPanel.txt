@@ -33,7 +33,6 @@ local function removeBlur()
 	end
 end
 
--- Função para criar uma ScreenGui dedicada para notificações
 local function createNotificationGui()
 	local notifGui = Instance.new("ScreenGui")
 	notifGui.Name = "NotificationScreenGui"
@@ -43,7 +42,6 @@ local function createNotificationGui()
 end
 
 local function showNotification(title, iconId, duration)
-	-- Criar uma ScreenGui independente para a notificação
 	local notificationScreenGui = createNotificationGui()
 	
 	local notificationGui = Instance.new("Frame")
