@@ -17,22 +17,32 @@ local notificationTimers = {}
 local linksPanelOpen = false
 local selectedLinkSite = nil
 
-local function calculatePanelScale(screenSize)
-	local referenceWidth = 1920
-	local referenceHeight = 1080
-	local minWidth = 320
-	local maxWidth = 1920
-	
+-- Configurações de tamanho base e responsividade
+local PANEL_BASE_WIDTH = 380
+local PANEL_BASE_HEIGHT = 440
+local LINKS_PANEL_WIDTH = 240
+local LINKS_PANEL_HEIGHT = 440
+local MIN_SCREEN_WIDTH = 320
+local MAX_SCREEN_WIDTH = 1920
+
+local function calculateResponsiveScale(screenSize)
 	local screenWidth = screenSize.X
-	local screenHeight = screenSize.Y
 	
-	local scaleX = screenWidth / referenceWidth
-	local scaleY = screenHeight / referenceHeight
-	local scale = math.min(scaleX, scaleY)
+	-- Se tela muito pequena, escala proporcionalmente
+	if screenWidth < MIN_SCREEN_WIDTH then
+		return MIN_SCREEN_WIDTH / PANEL_BASE_WIDTH
+	end
 	
-	scale = math.max(0.5, math.min(scale, 1.5))
+	-- Se tela muito grande, capped em 1.0
+	if screenWidth > MAX_SCREEN_WIDTH then
+		return 1.0
+	end
 	
-	return scale
+	-- Escala linear entre min e max
+	local normalizedWidth = (screenWidth - MIN_SCREEN_WIDTH) / (MAX_SCREEN_WIDTH - MIN_SCREEN_WIDTH)
+	local scale = 0.5 + (normalizedWidth * 0.5) -- Entre 0.5 e 1.0
+	
+	return math.clamp(scale, 0.5, 1.5)
 end
 
 local function createBlur()
@@ -71,6 +81,11 @@ local function showNotification(title, iconId, duration)
 	notificationGui.BorderColor3 = Color3.fromRGB(128, 128, 128)
 	notificationGui.Parent = notificationScreenGui
 
+	-- UIScale para notificações responsivas
+	local notifScale = Instance.new("UIScale")
+	notifScale.Name = "NotificationScale"
+	notifScale.Parent = notificationGui
+
 	local notificationIcon = Instance.new("ImageLabel")
 	notificationIcon.Name = "NotificationIcon"
 	notificationIcon.Size = UDim2.new(0, 40, 0, 40)
@@ -108,8 +123,23 @@ local function showNotification(title, iconId, duration)
 		startTime = startTime,
 		duration = duration,
 		gui = notificationGui,
-		screenGui = notificationScreenGui
+		screenGui = notificationScreenGui,
+		scale = notifScale
 	}
+
+	local function updateNotificationScale()
+		local screenSize = screenGui.AbsoluteSize
+		local scale = calculateResponsiveScale(screenSize)
+		notifScale.Scale = scale
+	end
+
+	updateNotificationScale()
+
+	screenGui.Changed:Connect(function(property)
+		if property == "AbsoluteSize" and notificationTimers[notificationId] then
+			updateNotificationScale()
+		end
+	end)
 
 	local slideInTween = game:GetService("TweenService"):Create(
 		notificationGui,
@@ -159,32 +189,35 @@ end
 
 local panelFrame = Instance.new("Frame")
 panelFrame.Name = "PanelFrame"
-panelFrame.Size = UDim2.new(0, 380, 0, 440)
+panelFrame.Size = UDim2.new(0, PANEL_BASE_WIDTH, 0, PANEL_BASE_HEIGHT)
 panelFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 panelFrame.BorderSizePixel = 3
 panelFrame.BorderColor3 = Color3.fromRGB(128, 128, 128)
 panelFrame.Parent = screenGui
+panelFrame.ZIndex = 100
 
--- Adiciona UIScale para escalonamento agressivo
+-- UIScale para painel principal
 local panelScale = Instance.new("UIScale")
 panelScale.Name = "PanelScale"
 panelScale.Parent = panelFrame
 
--- Função para atualizar posição e escala do painel
+-- UIAspectRatioConstraint para manter proporção
+local panelAspect = Instance.new("UIAspectRatioConstraint")
+panelAspect.AspectRatio = PANEL_BASE_WIDTH / PANEL_BASE_HEIGHT
+panelAspect.Parent = panelFrame
+
 local function updatePanelLayout()
 	local screenSize = screenGui.AbsoluteSize
-	local scale = calculatePanelScale(screenSize)
+	local scale = calculateResponsiveScale(screenSize)
 	
 	panelScale.Scale = scale
 	
-	-- Força posição no centro agressivamente
-	panelFrame.Position = UDim2.new(0.5, -190 * scale, 0.5, -220 * scale)
+	-- Força posição absolutamente no centro
+	panelFrame.Position = UDim2.new(0.5, -(PANEL_BASE_WIDTH * scale) / 2, 0.5, -(PANEL_BASE_HEIGHT * scale) / 2)
 end
 
--- Atualiza layout inicialmente
 updatePanelLayout()
 
--- Monitora mudanças de tamanho da tela
 screenGui.Changed:Connect(function(property)
 	if property == "AbsoluteSize" then
 		updatePanelLayout()
@@ -194,10 +227,10 @@ end)
 local expandTween = game:GetService("TweenService"):Create(
 	panelFrame,
 	TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-	{Size = UDim2.new(0, 380, 0, 440)}
+	{Size = UDim2.new(0, PANEL_BASE_WIDTH, 0, PANEL_BASE_HEIGHT)}
 )
 
-local initialSize = UDim2.new(0, 0, 0, 440)
+local initialSize = UDim2.new(0, 0, 0, PANEL_BASE_HEIGHT)
 panelFrame.Size = initialSize
 expandTween:Play()
 
@@ -285,7 +318,7 @@ closeButton.MouseButton1Click:Connect(function()
 	local shrinkTween = game:GetService("TweenService"):Create(
 		panelFrame,
 		TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-		{Size = UDim2.new(0, 0, 0, 440)}
+		{Size = UDim2.new(0, 0, 0, PANEL_BASE_HEIGHT)}
 	)
 	shrinkTween:Play()
 
@@ -404,7 +437,7 @@ local function closeLinksPanel()
 		local shrinkTween = game:GetService("TweenService"):Create(
 			linksPanel,
 			TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-			{Size = UDim2.new(0, 0, 0, 440)}
+			{Size = UDim2.new(0, 0, 0, LINKS_PANEL_HEIGHT)}
 		)
 		shrinkTween:Play()
 
@@ -429,9 +462,16 @@ end
 local function updateLinksPanelLayout()
 	if linksPanel and linksPanelScale then
 		local screenSize = screenGui.AbsoluteSize
-		local scale = calculatePanelScale(screenSize)
+		local scale = calculateResponsiveScale(screenSize)
 		linksPanelScale.Scale = scale
-		linksPanel.Position = UDim2.new(0.5, (-450 * scale) - (190 * scale), 0.5, -220 * scale)
+		
+		-- Painel principal no centro, links à esquerda com 10px de distância
+		local panelCenterX = screenSize.X / 2
+		local panelHalfWidth = (PANEL_BASE_WIDTH * scale) / 2
+		local linksHalfWidth = (LINKS_PANEL_WIDTH * scale) / 2
+		local linksPanelX = panelCenterX - panelHalfWidth - linksHalfWidth - 10
+		
+		linksPanel.Position = UDim2.new(0, linksPanelX, 0.5, -(LINKS_PANEL_HEIGHT * scale) / 2)
 	end
 end
 
@@ -445,22 +485,27 @@ local function createLinksPanel()
 
 	linksPanel = Instance.new("Frame")
 	linksPanel.Name = "LinksPanel"
-	linksPanel.Size = UDim2.new(0, 0, 0, 440)
+	linksPanel.Size = UDim2.new(0, 0, 0, LINKS_PANEL_HEIGHT)
 	linksPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 	linksPanel.BorderSizePixel = 3
 	linksPanel.BorderColor3 = Color3.fromRGB(128, 128, 128)
 	linksPanel.Parent = screenGui
+	linksPanel.ZIndex = 99
 
 	linksPanelScale = Instance.new("UIScale")
 	linksPanelScale.Name = "LinksPanelScale"
 	linksPanelScale.Parent = linksPanel
+
+	local linksAspect = Instance.new("UIAspectRatioConstraint")
+	linksAspect.AspectRatio = LINKS_PANEL_WIDTH / LINKS_PANEL_HEIGHT
+	linksAspect.Parent = linksPanel
 
 	updateLinksPanelLayout()
 
 	local expandTween = game:GetService("TweenService"):Create(
 		linksPanel,
 		TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-		{Size = UDim2.new(0, 240, 0, 440)}
+		{Size = UDim2.new(0, LINKS_PANEL_WIDTH, 0, LINKS_PANEL_HEIGHT)}
 	)
 	expandTween:Play()
 
@@ -699,7 +744,7 @@ redeemKeyButton.MouseButton1Click:Connect(function()
 		local shrinkTween = game:GetService("TweenService"):Create(
 			panelFrame,
 			TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
-			{Size = UDim2.new(0, 0, 0, 440)}
+			{Size = UDim2.new(0, 0, 0, PANEL_BASE_HEIGHT)}
 		)
 		shrinkTween:Play()
 
