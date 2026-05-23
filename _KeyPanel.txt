@@ -17,6 +17,27 @@ local notificationTimers = {}
 local linksPanelOpen = false
 local selectedLinkSite = nil
 
+-- Função para adaptar tamanho do painel baseado na tela
+local function calculatePanelScale(screenSize)
+	local referenceWidth = 1920
+	local referenceHeight = 1080
+	local minWidth = 320
+	local maxWidth = 1920
+	
+	local screenWidth = screenSize.X
+	local screenHeight = screenSize.Y
+	
+	-- Calcula escala baseada na menor dimensão
+	local scaleX = screenWidth / referenceWidth
+	local scaleY = screenHeight / referenceHeight
+	local scale = math.min(scaleX, scaleY)
+	
+	-- Limita a escala entre 0.5 e 1.5
+	scale = math.max(0.5, math.min(scale, 1.5))
+	
+	return scale
+end
+
 local function createBlur()
 	if not blurEffect then
 		blurEffect = Instance.new("BlurEffect")
@@ -142,11 +163,36 @@ end
 local panelFrame = Instance.new("Frame")
 panelFrame.Name = "PanelFrame"
 panelFrame.Size = UDim2.new(0, 380, 0, 440)
-panelFrame.Position = UDim2.new(0.5, -190, 0.5, -220)
 panelFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 panelFrame.BorderSizePixel = 3
 panelFrame.BorderColor3 = Color3.fromRGB(128, 128, 128)
 panelFrame.Parent = screenGui
+
+-- Adiciona UIScale para escalonamento agressivo
+local panelScale = Instance.new("UIScale")
+panelScale.Name = "PanelScale"
+panelScale.Parent = panelFrame
+
+-- Função para atualizar posição e escala do painel
+local function updatePanelLayout()
+	local screenSize = screenGui.AbsoluteSize
+	local scale = calculatePanelScale(screenSize)
+	
+	panelScale.Scale = scale
+	
+	-- Força posição no centro agressivamente
+	panelFrame.Position = UDim2.new(0.5, -190 * scale, 0.5, -220 * scale)
+end
+
+-- Atualiza layout inicialmente
+updatePanelLayout()
+
+-- Monitora mudanças de tamanho da tela
+screenGui.Changed:Connect(function(property)
+	if property == "AbsoluteSize" then
+		updatePanelLayout()
+	end
+end)
 
 local expandTween = game:GetService("TweenService"):Create(
 	panelFrame,
@@ -352,6 +398,7 @@ getKeyIcon.Image = "rbxassetid://108246566195671"
 getKeyIcon.Parent = getKeyButton
 
 local linksPanel = nil
+local linksPanelScale = nil
 local lootbashButton = nil
 local linkvertiseButton = nil
 
@@ -367,6 +414,7 @@ local function closeLinksPanel()
 		shrinkTween.Completed:Connect(function()
 			linksPanel:Destroy()
 			linksPanel = nil
+			linksPanelScale = nil
 			linksPanelOpen = false
 			selectedLinkSite = nil
 		end)
@@ -381,6 +429,15 @@ local function updateCopyButtonColor(copyLinkButton)
 	end
 end
 
+local function updateLinksPanelLayout()
+	if linksPanel and linksPanelScale then
+		local screenSize = screenGui.AbsoluteSize
+		local scale = calculatePanelScale(screenSize)
+		linksPanelScale.Scale = scale
+		linksPanel.Position = UDim2.new(0.5, (-450 * scale) - (190 * scale), 0.5, -220 * scale)
+	end
+end
+
 local function createLinksPanel()
 	if linksPanelOpen then
 		closeLinksPanel()
@@ -392,11 +449,16 @@ local function createLinksPanel()
 	linksPanel = Instance.new("Frame")
 	linksPanel.Name = "LinksPanel"
 	linksPanel.Size = UDim2.new(0, 0, 0, 440)
-	linksPanel.Position = UDim2.new(0.5, -450, 0.5, -220)
 	linksPanel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 	linksPanel.BorderSizePixel = 3
 	linksPanel.BorderColor3 = Color3.fromRGB(128, 128, 128)
 	linksPanel.Parent = screenGui
+
+	linksPanelScale = Instance.new("UIScale")
+	linksPanelScale.Name = "LinksPanelScale"
+	linksPanelScale.Parent = linksPanel
+
+	updateLinksPanelLayout()
 
 	local expandTween = game:GetService("TweenService"):Create(
 		linksPanel,
@@ -404,6 +466,12 @@ local function createLinksPanel()
 		{Size = UDim2.new(0, 240, 0, 440)}
 	)
 	expandTween:Play()
+
+	screenGui.Changed:Connect(function(property)
+		if property == "AbsoluteSize" and linksPanel and linksPanel.Parent then
+			updateLinksPanelLayout()
+		end
+	end)
 
 	local linksHeaderFrame = Instance.new("Frame")
 	linksHeaderFrame.Name = "LinksHeaderFrame"
