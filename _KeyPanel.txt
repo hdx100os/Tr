@@ -17,12 +17,10 @@ local notificationTimers = {}
 local linksPanelOpen = false
 local selectedLinkSite = nil
 
--- Escala dinâmica baseada no tamanho da tela
 local function getResponsiveScale()
 	local screenSize = screenGui.AbsoluteSize
 	local minDimension = math.min(screenSize.X, screenSize.Y)
-	
-	-- Se a menor dimensão for menor que 400, precisamos escalar para baixo
+
 	if minDimension < 400 then
 		return minDimension / 400
 	end
